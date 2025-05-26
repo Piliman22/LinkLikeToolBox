@@ -1,0 +1,14 @@
+[workspace]
+members = [
+    "crates/LinkLike_Core",
+    "crates/LinkLike_CLI"
+]
+
+[package]
+name = "link_like_tool_box"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+LinkLike_Core = { path = "crates/LinkLike_Core" }
+LinkLike_CLI = { path = "crates/LinkLike_CLI" }

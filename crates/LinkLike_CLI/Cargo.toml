@@ -1,0 +1,11 @@
+[package]
+name = "LinkLike_CLI"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+LinkLike_Core = { path = "../LinkLike_Core" }
+clap = { version = "4.0", features = ["derive"] }
+console = "0.15"
+indicatif = "0.17"
+color-eyre = "0.6"
