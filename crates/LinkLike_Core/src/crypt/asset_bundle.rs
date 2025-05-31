@@ -40,6 +40,20 @@ impl AssetBundle {
         Ok(Self::new(data))
     }
 
+    pub fn from_folder<P: AsRef<std::path::Path>>(path: P) -> io::Result<Self> {
+        let mut data = Vec::new();
+        for entry in std::fs::read_dir(path)? {
+            let entry = entry?;
+            if entry.file_type()?.is_file() {
+                let mut file = std::fs::File::open(entry.path())?;
+                let mut file_data = Vec::new();
+                file.read_to_end(&mut file_data)?;
+                data.extend(file_data);
+            }
+        }
+        Ok(Self::new(data))
+    }
+
     pub fn save_to_file<P: AsRef<std::path::Path>>(&self, path: P) -> io::Result<()> {
         let mut file = std::fs::File::create(path)?;
         file.write_all(&self.data)?;

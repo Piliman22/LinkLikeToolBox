@@ -23,8 +23,10 @@ impl Banner {
 
     pub fn print_summary(&self) {
         self.output.print_info("You can use these commands");
-        println!("   decrypt ab <file>  - Decrypts AssetBundle files");
-        println!("   crypt ab <file>    - Encrypts AssetBundle files");
-        println!("   help               - Displays this help message");
+        println!("   decrypt ab <file>     - Decrypts AssetBundle files");
+        println!("   decrypt chart <file>  - Decompresses chart files to JSON");
+        println!("   crypt ab <file>       - Encrypts AssetBundle files");
+        println!("   crypt chart <file> [level] - Compresses JSON to chart files (optional compression level 0-9)");
+        println!("   help                  - Displays this help message");
     }
 }
