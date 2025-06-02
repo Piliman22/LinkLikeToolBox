@@ -300,7 +300,6 @@ version = "0.1.0"
 dependencies = [
  "LinkLike_CLI",
  "LinkLike_Core",
- "flate2",
 ]
 
 [[package]]

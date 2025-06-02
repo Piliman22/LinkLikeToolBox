@@ -3,15 +3,18 @@ use crate::progress::Progress;
 use LinkLike_Core::{AssetBundle, Chart};
 use std::path::Path;
 use std::fs;
+use crate::Banner;
 
 pub struct Commands {
     output: Output,
+    banner: Banner,
 }
 
 impl Commands {
     pub fn new() -> Self {
         Self {
             output: Output::new(),
+            banner: Banner::new(),
         }
     }
 
@@ -142,6 +145,82 @@ impl Commands {
         spinner.finish_with_message("complete");
         self.output.print_success(&format!("file: {}", output_path));
         
+        Ok(())
+    }
+
+    pub fn execute(&self, args: &[String]) -> std::io::Result<()> {
+        if args.len() < 2 {
+            self.banner.print_banner();
+            self.banner.print_summary();
+            return Ok(());
+        }
+
+        match args[1].as_str() {
+            "decrypt" => {
+                if args.len() < 3 {
+                    self.banner.print_summary();
+                    return Ok(());
+                }
+                
+                match args[2].as_str() {
+                    "ab" => {
+                        if args.len() < 4 {
+                            self.banner.print_summary();
+                            return Ok(());
+                        }
+                        self.decrypt_ab(&args[3])?;
+                    },
+                    "chart" => {
+                        if args.len() < 4 {
+                            self.banner.print_summary();
+                            return Ok(());
+                        }
+                        self.decompress_chart(&args[3])?;
+                    },
+                    _ => {
+                        self.banner.print_summary();
+                    }
+                }
+            },
+            "crypt" => {
+                if args.len() < 3 {
+                    self.banner.print_summary();
+                    return Ok(());
+                }
+                
+                match args[2].as_str() {
+                    "ab" => {
+                        if args.len() < 4 {
+                            self.banner.print_summary();
+                            return Ok(());
+                        }
+                        self.crypt_ab(&args[3])?;
+                    },
+                    "chart" => {
+                        if args.len() < 4 {
+                            self.banner.print_summary();
+                            return Ok(());
+                        }
+                        
+                        let level = if args.len() >= 5 {
+                            args[4].parse::<u32>().unwrap_or(6)
+                        } else {
+                            6
+                        };
+                        
+                        self.compress_chart(&args[3], level)?;
+                    },
+                    _ => {
+                        self.banner.print_summary();
+                    }
+                }
+            },
+            _ => {
+                self.banner.print_banner();
+                self.banner.print_summary();
+            }
+        }
+
         Ok(())
     }
 }
