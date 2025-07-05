@@ -1,4 +1,4 @@
-FROM rust:1.80-slim as builder
+FROM rust:1.82-slim as builder
 
 RUN apt-get update && apt-get install -y \
     pkg-config \
