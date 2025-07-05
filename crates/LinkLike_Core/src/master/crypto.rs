@@ -4,7 +4,7 @@ use aes::cipher::{BlockDecryptMut, KeyIvInit};
 use cbc::Decryptor;
 use crate::master::compression::try_lz4_decompress_detailed;
 
-/// Manifest構造体のデータ部分（循環参照を避けるため）
+
 #[derive(Debug)]
 pub struct ManifestCryptoData {
     pub seed: u64,
@@ -12,28 +12,28 @@ pub struct ManifestCryptoData {
     pub size: u64,
 }
 
-/// Goのasset.goのDecodeAsset関数と完全に同じ実装
+
 pub fn decode_asset_with_data(manifest_data: &ManifestCryptoData, src: &[u8], dst: &mut Vec<u8>) -> Result<(), Box<dyn std::error::Error>> {
     const PREFIX: &str = "c34ea77df4976cd8907096fa47bb97e61852305892494e3692ba0c7eb434f022c549c96cf7ca0ee1b6ba7f203b6c76e8679699ce9c44af7b1cb000173a515938";
     
     let mut buf = Vec::new();
     
-    // Step 1. Write a bunch of constant arbitrary hex data
+    
     let hex_prefix = hex::decode(PREFIX)?;
     buf.extend_from_slice(&hex_prefix);
     
-    // Step 2. Write Manifest.Seed (CATALOG type)
+    
     buf.extend_from_slice(&manifest_data.seed.to_be_bytes());
     
-    // Step 3. Write CRC64 of crc64str
+    
     let crc64 = update_crc64(0, manifest_data.calc_crc64_name.as_bytes());
     buf.extend_from_slice(&crc64.to_be_bytes());
     
-    // Step 4. Write CRC32 ("android" for CATALOG)
+    
     let crc32 = update_crc32(0, b"android");
     buf.extend_from_slice(&crc32.to_be_bytes());
     
-    // Step 5. Write VLQ of Manifest.Size
+    
     let mut varint_buf = [0u8; 10];
     let n = encode_uvarint(manifest_data.size, &mut varint_buf);
     buf.extend_from_slice(&varint_buf[..n]);
@@ -42,7 +42,7 @@ pub fn decode_asset_with_data(manifest_data: &ManifestCryptoData, src: &[u8], ds
     println!("Manifest details - Seed: {}, CRC64: {}, CRC32: {}, Size: {}", 
              manifest_data.seed, crc64, crc32, manifest_data.size);
     
-    // Compute sha256 of all bytes
+    
     let mut hasher = Sha256::new();
     hasher.update(&buf);
     let keyiv = hasher.finalize();
@@ -54,11 +54,11 @@ pub fn decode_asset_with_data(manifest_data: &ManifestCryptoData, src: &[u8], ds
     println!("Key: {}", hex::encode(key));
     println!("IV: {}", hex::encode(iv));
     
-    // AES-128-CBCで復号化
+    
     let cipher = Decryptor::<Aes128>::new(key.into(), iv.into());
     let mut decrypted = src.to_vec();
     
-    // パディングサイズをチェック
+    
     if decrypted.len() % 16 != 0 {
         return Err("Invalid AES block size".into());
     }
@@ -68,22 +68,22 @@ pub fn decode_asset_with_data(manifest_data: &ManifestCryptoData, src: &[u8], ds
     
     println!("Decrypted data length: {} bytes", decrypted_data.len());
     
-    // 復号化されたデータの詳細分析
+    
     if decrypted_data.len() >= 32 {
         println!("Decrypted header (32 bytes): {}", hex::encode(&decrypted_data[..32]));
         
-        // バイト値の分析
+        
         for i in 0..std::cmp::min(16, decrypted_data.len()) {
             println!("Byte {}: 0x{:02x} ({})", i, decrypted_data[i], decrypted_data[i]);
         }
     }
     
-    // LZ4解凍の詳細なデバッグ
+    
     match try_lz4_decompress_detailed(decrypted_data, manifest_data.size) {
         Ok(decompressed) => {
             println!("LZ4 decompression successful: {} bytes", decompressed.len());
             
-            // 解凍されたデータの先頭を確認
+            
             if decompressed.len() >= 16 {
                 println!("Decompressed header: {}", hex::encode(&decompressed[..16]));
                 let magic = u16::from_be_bytes([decompressed[0], decompressed[1]]);
@@ -95,7 +95,7 @@ pub fn decode_asset_with_data(manifest_data: &ManifestCryptoData, src: &[u8], ds
         Err(e) => {
             println!("LZ4 decompression failed: {}", e);
             
-            // フォールバック: 復号化されたデータをそのまま使用
+            
             println!("Attempting to use decrypted data directly...");
             dst.extend_from_slice(decrypted_data);
         }
@@ -104,7 +104,7 @@ pub fn decode_asset_with_data(manifest_data: &ManifestCryptoData, src: &[u8], ds
     Ok(())
 }
 
-/// Goのcrypto.UpdateCrc64と同じ実装
+
 pub fn update_crc64(_crc: u64, data: &[u8]) -> u64 {
     use crc::{Crc, CRC_64_ECMA_182};
     
@@ -112,7 +112,7 @@ pub fn update_crc64(_crc: u64, data: &[u8]) -> u64 {
     CRC64.checksum(data)
 }
 
-/// CRC32計算（Goコードと同じ）
+
 pub fn update_crc32(_crc: u32, data: &[u8]) -> u32 {
     use crc::{Crc, CRC_32_ISO_HDLC};
     
@@ -120,7 +120,7 @@ pub fn update_crc32(_crc: u32, data: &[u8]) -> u32 {
     CRC32.checksum(data)
 }
 
-/// Goのbinary.PutUvarintと同じ実装
+
 pub fn encode_uvarint(mut x: u64, buf: &mut [u8]) -> usize {
     let mut i = 0;
     while x >= 0x80 {

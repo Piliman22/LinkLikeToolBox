@@ -3,19 +3,19 @@ use std::io::{BufRead, BufReader};
 use std::path::Path;
 use serde_json::{Value, Map};
 
-/// バイトデータからTSVをパース
+
 pub fn parse_tsv_from_bytes(data: &[u8]) -> Result<Vec<Map<String, Value>>, Box<dyn std::error::Error>> {
-    // UTF-8として解釈
+    
     let text = String::from_utf8(data.to_vec())?;
     
-    // 行に分割
+    
     let lines: Vec<&str> = text.lines().collect();
     
     if lines.is_empty() {
         return Err("Empty TSV data".into());
     }
     
-    // ヘッダー行を読み取り
+    
     let headers: Vec<&str> = lines[0].split('\t').collect();
     
     if headers.is_empty() {
@@ -26,7 +26,7 @@ pub fn parse_tsv_from_bytes(data: &[u8]) -> Result<Vec<Map<String, Value>>, Box<
     
     let mut records = Vec::new();
     
-    // データ行を処理（ヘッダーをスキップ）
+    
     for (line_num, line) in lines.iter().skip(1).enumerate() {
         if line.trim().is_empty() {
             continue;
@@ -38,14 +38,14 @@ pub fn parse_tsv_from_bytes(data: &[u8]) -> Result<Vec<Map<String, Value>>, Box<
         for (i, header) in headers.iter().enumerate() {
             let value_str = values.get(i).unwrap_or(&"").trim();
             
-            // 値の型を推定してJSONに変換
+            
             let json_value = infer_json_value(value_str);
             record.insert(header.to_string(), json_value);
         }
         
         records.push(record);
         
-        // 進捗表示（1000行ごと）
+        
         if (line_num + 1) % 1000 == 0 {
             println!("    Parsed {} rows", line_num + 1);
         }
@@ -55,19 +55,19 @@ pub fn parse_tsv_from_bytes(data: &[u8]) -> Result<Vec<Map<String, Value>>, Box<
     Ok(records)
 }
 
-/// TSVファイルをJSONに変換
+
 pub fn tsv_to_json<P: AsRef<Path>>(file_path: P) -> Result<Vec<Map<String, Value>>, Box<dyn std::error::Error>> {
     let file = File::open(file_path)?;
     let reader = BufReader::new(file);
     let mut lines = reader.lines();
     
-    // ヘッダー行を読み取り
+    
     let header_line = lines.next().ok_or("Empty file")??;
     let headers: Vec<&str> = header_line.split('\t').collect();
     
     let mut records = Vec::new();
     
-    // データ行を処理
+    
     for line in lines {
         let line = line?;
         if line.trim().is_empty() {
@@ -88,9 +88,9 @@ pub fn tsv_to_json<P: AsRef<Path>>(file_path: P) -> Result<Vec<Map<String, Value
     Ok(records)
 }
 
-/// TSVファイル名から適切なJSON型名を生成
+
 pub fn get_json_type_name(tsv_label: &str) -> String {
-    // TSVファイル名をPascalCaseに変換
+    
     let mut result = String::new();
     let mut capitalize_next = true;
     
@@ -105,7 +105,7 @@ pub fn get_json_type_name(tsv_label: &str) -> String {
         }
     }
     
-    // 拡張子を削除
+    
     if result.ends_with(".tsv") || result.ends_with(".Tsv") {
         result.truncate(result.len() - 4);
     }
@@ -113,7 +113,7 @@ pub fn get_json_type_name(tsv_label: &str) -> String {
     result
 }
 
-/// TSVファイルをJSONファイルとして保存
+
 pub fn convert_tsv_to_json_file<P1: AsRef<Path>, P2: AsRef<Path>>(
     tsv_path: P1, 
     json_path: P2
@@ -124,32 +124,32 @@ pub fn convert_tsv_to_json_file<P1: AsRef<Path>, P2: AsRef<Path>>(
     Ok(())
 }
 
-/// 文字列値からJSON型を推定
+
 fn infer_json_value(value_str: &str) -> Value {
     if value_str.is_empty() {
         return Value::Null;
     }
     
-    // 整数の判定
+    
     if let Ok(int_val) = value_str.parse::<i64>() {
         return Value::Number(int_val.into());
     }
     
-    // 浮動小数点の判定
+    
     if let Ok(float_val) = value_str.parse::<f64>() {
         if let Some(num) = serde_json::Number::from_f64(float_val) {
             return Value::Number(num);
         }
     }
     
-    // ブール値の判定
+    
     match value_str.to_lowercase().as_str() {
         "true" | "1" => return Value::Bool(true),
         "false" | "0" => return Value::Bool(false),
         _ => {}
     }
     
-    // デフォルトは文字列として扱う
+    
     Value::String(value_str.to_string())
 }
 
@@ -185,7 +185,7 @@ mod tests {
     
     #[test]
     fn test_parse_tsv_to_json() {
-        // テスト用の一時ファイルを作成
+        
         use std::io::Write;
         let mut temp_file = std::env::temp_dir();
         temp_file.push("test.tsv");
@@ -199,7 +199,7 @@ mod tests {
         assert_eq!(records[0]["id"], Value::Number(1.into()));
         assert_eq!(records[1]["name"], Value::String("hello".to_string()));
         
-        // クリーンアップ
+        
         let _ = std::fs::remove_file(&temp_file);
     }
 }

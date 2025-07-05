@@ -1,8 +1,8 @@
 use std::io::Read;
 
-/// Goのcrypto.Base32Encoderと同じ実装
+
 pub fn base32_encode(data: &[u8]) -> String {
-    // Goのカスタムアルファベット: "abcdefghijklmnopqrstuvwxyz234567"
+    
     const ALPHABET: &[u8] = b"abcdefghijklmnopqrstuvwxyz234567";
     
     let mut result = String::new();
@@ -20,7 +20,7 @@ pub fn base32_encode(data: &[u8]) -> String {
         }
     }
     
-    // 残りのビットを処理（パディングなし）
+    
     if bits_in_buffer > 0 {
         let index = ((buffer << (5 - bits_in_buffer)) & 0x1F) as usize;
         result.push(ALPHABET[index] as char);
@@ -29,7 +29,7 @@ pub fn base32_encode(data: &[u8]) -> String {
     result
 }
 
-/// VLQ読み取りの実装
+
 pub fn read_uvarint<R: Read>(reader: &mut R) -> Result<u64, std::io::Error> {
     let mut result = 0u64;
     let mut shift = 0;
@@ -57,7 +57,7 @@ pub fn read_uvarint<R: Read>(reader: &mut R) -> Result<u64, std::io::Error> {
     Ok(result)
 }
 
-/// null終端バイトまで読み取り
+
 pub fn read_until_null_byte<R: Read>(reader: &mut R) -> Result<Vec<u8>, std::io::Error> {
     let mut result = Vec::new();
     let mut byte = [0u8; 1];
