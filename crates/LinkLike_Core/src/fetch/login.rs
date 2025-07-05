@@ -1,4 +1,4 @@
-use reqwest::blocking::Client;
+use reqwest::Client;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use serde_json::json;
 use crate::fetch::header::login_headers;
@@ -14,7 +14,7 @@ fn rand_hex_string(len: usize) -> String {
         .collect()
 }
 
-pub fn login(client_version: &str) -> Result<String, Box<dyn std::error::Error>> {
+pub async fn login(client_version: &str) -> Result<String, Box<dyn std::error::Error>> {
     let client = Client::new();
 
     // body
@@ -46,7 +46,8 @@ pub fn login(client_version: &str) -> Result<String, Box<dyn std::error::Error>>
         .post(LOGIN_URL)
         .headers(headers)
         .json(&body)
-        .send()?;
+        .send()
+        .await?;
 
     if !res.status().is_success() {
         return Err(format!("Login failed. Status: {}", res.status()).into());

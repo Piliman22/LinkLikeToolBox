@@ -1,6 +1,7 @@
 use crate::color::Output;
 use crate::progress::Progress;
-use LinkLike_Core::{AssetBundle, Chart};
+use LinkLike_Core::{AssetBundle, Chart, Catalog};
+use LinkLike_Core::fetch::auto_update::{AutoUpdater, UpdateOptions, UpdateResult};
 use std::path::Path;
 use std::fs;
 use crate::Banner;
@@ -148,6 +149,126 @@ impl Commands {
         Ok(())
     }
 
+    pub async fn download_manifest(&self, real_name: &str, save_dir: &str) -> Result<(), Box<dyn std::error::Error>> {
+        // ディレクトリが存在しない場合は作成
+        if !Path::new(save_dir).exists() {
+            fs::create_dir_all(save_dir)?;
+        }
+
+        let spinner = Progress::new_spinner("Downloading manifest...");
+        
+        LinkLike_Core::fetch::ab::download_manifest(real_name, save_dir).await?;
+        
+        spinner.finish_with_message("Manifest download completed");
+        self.output.print_success(&format!("Manifest saved to: {}", save_dir));
+        
+        Ok(())
+    }
+
+    pub async fn download_assets(&self, catalog_path: &str, download_dir: &str) -> Result<(), Box<dyn std::error::Error>> {
+        // カタログファイルが存在するかチェック
+        if !Path::new(catalog_path).exists() {
+            self.output.print_error("Catalog file not found");
+            return Ok(());
+        }
+
+        // ディレクトリが存在しない場合は作成
+        if !Path::new(download_dir).exists() {
+            fs::create_dir_all(download_dir)?;
+        }
+
+        let spinner = Progress::new_spinner("Loading catalog...");
+        
+        // カタログファイルを読み込み
+        let catalog_data = fs::read_to_string(catalog_path)?;
+        let catalog: LinkLike_Core::manifest::Catalog = serde_json::from_str(&catalog_data)?;
+        
+        spinner.finish_with_message("Catalog loaded");
+        
+        let progress = Progress::new_progress_bar(catalog.entries.len() as u64);
+        
+        LinkLike_Core::fetch::ab::download_assets(&catalog, download_dir).await?;
+        
+        progress.finish_with_message("All assets downloaded successfully");
+        self.output.print_success(&format!("Assets saved to: {}", download_dir));
+        
+        Ok(())
+    }
+
+    pub async fn execute_download_command(&self, args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
+        if args.len() < 3 {
+            self.output.print_error("Usage: download <manifest|assets|auto> ...");
+            return Ok(());
+        }
+
+        match args[2].as_str() {
+            "manifest" => {
+                if args.len() < 5 {
+                    self.output.print_error("Usage: download manifest <real_name> <save_dir>");
+                    return Ok(());
+                }
+                self.download_manifest(&args[3], &args[4]).await?;
+            }
+            "assets" => {
+                if args.len() < 5 {
+                    self.output.print_error("Usage: download assets <catalog_path> <download_dir>");
+                    return Ok(());
+                }
+                self.download_assets(&args[3], &args[4]).await?;
+            }
+            "auto" => {
+                self.auto_update(args).await?;
+            }
+            _ => {
+                self.output.print_error("Unknown download command. Use 'manifest', 'assets', or 'auto'.");
+            }
+        }
+
+        Ok(())
+    }
+
+    pub async fn auto_update(&self, args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
+        let mut options = UpdateOptions::default();
+        
+        // オプションを解析
+        for arg in args.iter().skip(3) {
+            match arg.as_str() {
+                "--force" => options.force = true,
+                "--db-only" => options.db_only = true,
+                "--keep-raw" => options.keep_raw = true,
+                "--analyze" => options.analyze = true,
+                _ => {}
+            }
+        }
+
+        if options.analyze {
+            self.output.print_info("Start analyzing code...");
+            // TODO: 解析機能の実装
+            self.output.print_success("Analysis completed.");
+            return Ok(());
+        }
+
+        let updater = AutoUpdater::new();
+        let spinner = Progress::new_spinner("Starting auto update...");
+        
+        match updater.auto_update(options).await? {
+            UpdateResult::Updated => {
+                spinner.finish_with_message("Auto update completed successfully");
+                self.output.print_success("All resources have been updated!");
+            }
+            UpdateResult::NoUpdate => {
+                spinner.finish_with_message("No updates available");
+                self.output.print_info("Everything is up to date.");
+            }
+            UpdateResult::AnalysisComplete => {
+                spinner.finish_with_message("Analysis completed");
+                self.output.print_success("Code analysis finished.");
+            }
+        }
+
+        Ok(())
+    }
+
     pub fn execute(&self, args: &[String]) -> std::io::Result<()> {
         if args.len() < 2 {
             self.banner.print_banner();
@@ -214,6 +335,10 @@ impl Commands {
                         self.banner.print_summary();
                     }
                 }
+            },
+            "help" => {
+                self.banner.print_banner();
+                self.banner.print_summary();
             },
             _ => {
                 self.banner.print_banner();

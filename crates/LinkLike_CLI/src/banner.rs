@@ -23,6 +23,8 @@ impl Banner {
 
     pub fn print_summary(&self) {
         self.output.print_info("You can use these commands");
+        println!("   download manifest <real_name> <save_dir>     - Downloads manifest file");
+        println!("   download assets <catalog_path> <download_dir> - Downloads all assets from catalog");
         println!("   decrypt ab <file>     - Decrypts AssetBundle files");
         println!("   decrypt chart <file>  - Decompresses chart files to JSON");
         println!("   crypt ab <file>       - Encrypts AssetBundle files");

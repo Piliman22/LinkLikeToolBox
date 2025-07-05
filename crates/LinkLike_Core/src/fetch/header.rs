@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
-// Login headers for the LinkLike API
-// url is: https://api.link-like-lovelive.app/v1/user/login
+// Login headers for the LinkLike API (Goコードと完全に同じ)
 pub fn login_headers() -> HashMap<&'static str, &'static str> {
     let mut headers = HashMap::new();
     headers.insert("X-Idempotency-Key", "eb6afd7c69cd9a87ca1fb167b21ae95c");
@@ -17,11 +16,12 @@ pub fn login_headers() -> HashMap<&'static str, &'static str> {
     headers
 }
 
-// asset headers
-pub fn asset_headers() -> HashMap<& 'static str, & 'static str> {
+// asset headers (Goのdownloader.goのassetHeaderと完全に同じ)
+pub fn asset_headers() -> HashMap<&'static str, &'static str> {
     let mut headers = HashMap::new();
     headers.insert("User-Agent", "UnityPlayer/2021.3.16f1 (UnityWebRequest/1.0, libcurl/7.84.0-DEV)");
     headers.insert("Accept", "*/*");
-    headers.insert("Accept-Encoding", "gzip, deflate");
+    headers.insert("Accept-Encoding", "deflate, gzip");
     headers.insert("X-Unity-Version", "2021.3.16f1");
+    headers
 }

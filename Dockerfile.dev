@@ -1,0 +1,29 @@
+FROM rust:1.75-slim as development
+
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    ca-certificates \
+    git \
+    curl \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY Cargo.toml Cargo.lock ./
+COPY crates/LinkLike_Core/Cargo.toml ./crates/LinkLike_Core/
+COPY crates/LinkLike_CLI/Cargo.toml ./crates/LinkLike_CLI/
+
+RUN mkdir -p src crates/LinkLike_Core/src crates/LinkLike_CLI/src && \
+    echo "fn main() {}" > src/main.rs && \
+    echo "fn main() {}" > crates/LinkLike_Core/src/lib.rs && \
+    echo "fn main() {}" > crates/LinkLike_CLI/src/lib.rs && \
+    cargo build && \
+    rm -rf src crates/LinkLike_Core/src crates/LinkLike_CLI/src
+
+COPY . .
+
+RUN cargo build
+
+CMD ["cargo", "run"]

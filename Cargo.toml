@@ -12,3 +12,4 @@ edition = "2021"
 [dependencies]
 LinkLike_Core = { path = "crates/LinkLike_Core" }
 LinkLike_CLI = { path = "crates/LinkLike_CLI" }
+tokio = { version = "1.0", features = ["full"] }
