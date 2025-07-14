@@ -1,6 +1,6 @@
 use crate::color::Output;
 use crate::progress::Progress;
-use LinkLike_Core::{AssetBundle, Chart, Catalog};
+use LinkLike_Core::{AssetBundle, Chart};
 use LinkLike_Core::fetch::auto_update::{AutoUpdater, UpdateOptions, UpdateResult};
 use std::path::Path;
 use std::fs;
@@ -20,7 +20,7 @@ impl Commands {
     }
 
     pub fn decrypt_ab(&self, file_path: &str) -> std::io::Result<()> {
-        // check if the file exists
+        
         if !Path::new(file_path).exists() {
             self.output.print_error("file is not found");
             return Ok(());
@@ -63,7 +63,7 @@ impl Commands {
     }
 
     pub fn crypt_ab(&self, file_path: &str) -> std::io::Result<()> {
-        // check if the file exists
+        
         if !Path::new(file_path).exists() {
             self.output.print_error("File is not found");
             return Ok(());
@@ -150,7 +150,7 @@ impl Commands {
     }
 
     pub async fn download_manifest(&self, real_name: &str, save_dir: &str) -> Result<(), Box<dyn std::error::Error>> {
-        // ディレクトリが存在しない場合は作成
+        
         if !Path::new(save_dir).exists() {
             fs::create_dir_all(save_dir)?;
         }
@@ -166,20 +166,20 @@ impl Commands {
     }
 
     pub async fn download_assets(&self, catalog_path: &str, download_dir: &str) -> Result<(), Box<dyn std::error::Error>> {
-        // カタログファイルが存在するかチェック
+        
         if !Path::new(catalog_path).exists() {
             self.output.print_error("Catalog file not found");
             return Ok(());
         }
 
-        // ディレクトリが存在しない場合は作成
+        
         if !Path::new(download_dir).exists() {
             fs::create_dir_all(download_dir)?;
         }
 
         let spinner = Progress::new_spinner("Loading catalog...");
         
-        // カタログファイルを読み込み
+        
         let catalog_data = fs::read_to_string(catalog_path)?;
         let catalog: LinkLike_Core::manifest::Catalog = serde_json::from_str(&catalog_data)?;
         
@@ -230,11 +230,12 @@ impl Commands {
     pub async fn auto_update(&self, args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         let mut options = UpdateOptions::default();
         
-        // オプションを解析
+        
         for arg in args.iter().skip(3) {
             match arg.as_str() {
                 "--force" => options.force = true,
                 "--db-only" => options.db_only = true,
+                "--chart-only" => options.chart_only = true,
                 "--keep-raw" => options.keep_raw = true,
                 "--analyze" => options.analyze = true,
                 _ => {}
@@ -243,7 +244,7 @@ impl Commands {
 
         if options.analyze {
             self.output.print_info("Start analyzing code...");
-            // TODO: 解析機能の実装
+            
             self.output.print_success("Analysis completed.");
             return Ok(());
         }

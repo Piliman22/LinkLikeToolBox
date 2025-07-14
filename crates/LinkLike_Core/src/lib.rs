@@ -3,15 +3,19 @@ pub mod manifest;
 mod crypt {
     pub mod asset_bundle;
     pub mod chart;
+    pub mod asset_decoder; 
 }
 pub mod fetch {
     pub mod ab;
     pub mod auto_update;
-    pub mod masterdata;
     pub mod downloader;
     pub mod header;
     pub mod login;
     pub mod playversion;
+    pub mod catalog_processor;
+    pub mod asset_processor;
+    pub mod file_converter;
+    pub mod types;
 }
 pub mod master {
     pub mod parse;

@@ -18,7 +18,7 @@ const MAX_CONCURRENCY: usize = 10;
 const MAX_RETRIES: usize = 3;
 const TIMEOUT_SECONDS: u64 = 1200;
 
-/// Thread-safe counter for tracking download progress
+
 #[derive(Debug)]
 pub struct SafeCounter {
     value: AtomicUsize,
@@ -44,7 +44,7 @@ impl SafeCounter {
     }
 }
 
-/// Download manifest synchronously (Goの実装と完全に同じ)
+
 pub async fn download_manifest_sync(real_name: &str, save_dir: &str) -> Result<(), Box<dyn std::error::Error>> {
     let counter = Arc::new(SafeCounter::new());
     let entry = Entry::new_manifest(real_name.to_string());
@@ -60,7 +60,7 @@ pub async fn download_manifest_sync(real_name: &str, save_dir: &str) -> Result<(
     Ok(())
 }
 
-/// Download assets asynchronously with concurrency control
+
 pub async fn download_assets_async(catalog: &Catalog, download_dir: &str) -> Result<(), Box<dyn std::error::Error>> {
     let semaphore = Arc::new(Semaphore::new(MAX_CONCURRENCY));
     let dl_amount = catalog.entries.len();
@@ -71,7 +71,7 @@ pub async fn download_assets_async(catalog: &Catalog, download_dir: &str) -> Res
     let client = create_client();
     let headers = asset_headers();
     
-    // Create a stream of download tasks
+    
     let download_tasks = stream::iter(&catalog.entries)
         .map(|entry| {
             let semaphore = Arc::clone(&semaphore);
@@ -88,10 +88,10 @@ pub async fn download_assets_async(catalog: &Catalog, download_dir: &str) -> Res
         })
         .buffer_unordered(MAX_CONCURRENCY);
     
-    // Execute all downloads
+    
     let results: Vec<Result<(), Box<dyn std::error::Error>>> = download_tasks.collect().await;
     
-    // Check for any errors
+    
     for result in results {
         result?;
     }
@@ -100,7 +100,7 @@ pub async fn download_assets_async(catalog: &Catalog, download_dir: &str) -> Res
     Ok(())
 }
 
-/// Download a single file with retry logic
+
 async fn download_one(
     client: &Client,
     entry: &Entry,
@@ -143,7 +143,7 @@ async fn download_one(
     unreachable!()
 }
 
-/// Execute the actual download and save to file
+
 async fn execute_download(
     client: &Client,
     url: &str,
@@ -163,14 +163,10 @@ async fn execute_download(
         return Err(format!("HTTP error: {} {}", response.status(), response.status().canonical_reason().unwrap_or("")).into());
     }
     
-    // TSVファイルの場合は、str_label_crcをファイル名として使用（修正箇所）
-    let file_name = if entry.str_type_crc == "tsv" {
-        format!("{}.tsv", entry.str_label_crc)
-    } else {
-        entry.real_name.clone()
-    };
     
-    let file_path = Path::new(save_dir).join(&file_name);
+    let file_name = &entry.real_name;
+    
+    let file_path = Path::new(save_dir).join(file_name);
     let bytes = response.bytes().await?;
     
     let mut file = fs::File::create(file_path)?;
@@ -180,7 +176,7 @@ async fn execute_download(
     Ok(())
 }
 
-/// Prepare URL for the given entry (Goのdownloader.goのprepareRequest関数と完全に同じ)
+
 fn prepare_url(entry: &Entry) -> String {
     let res_type = if entry.resource_type <= 1 {
         "android"
@@ -188,7 +184,7 @@ fn prepare_url(entry: &Entry) -> String {
         "raw"
     };
     
-    // Goコードと完全に同じURL構築: entry.RealName[:2]
+    
     let prefix = if entry.real_name.len() >= 2 {
         &entry.real_name[..2]
     } else {
@@ -204,7 +200,7 @@ fn prepare_url(entry: &Entry) -> String {
     )
 }
 
-/// Create HTTP client with appropriate settings
+
 fn create_client() -> Client {
     Client::builder()
         .timeout(Duration::from_secs(TIMEOUT_SECONDS))

@@ -1,5 +1,5 @@
 use crate::master::{
-    crypto::{update_crc64, encode_uvarint},
+    crypto::{encode_uvarint},
     encoding::base32_encode,
 };
 use md5;

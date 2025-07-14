@@ -12,10 +12,8 @@ pub fn try_lz4_decompress_detailed(data: &[u8], expected_size: u64) -> Result<Ve
     println!("Expected uncompressed size: {} bytes", expected_size);
     
     
-    #[cfg(feature = "hex")]
     println!("First 16 bytes: {}", hex::encode(&data[..std::cmp::min(16, data.len())]));
     
-    #[cfg(not(feature = "hex"))]
     println!("First 16 bytes: {:?}", &data[..std::cmp::min(16, data.len())]);
     
     

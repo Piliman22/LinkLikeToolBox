@@ -3,12 +3,10 @@ use std::fs::File;
 use std::io::{Read, Cursor};
 use std::collections::HashMap;
 use byteorder::{BigEndian, ReadBytesExt};
-use md5;
 
 use crate::master::{
-    crypto::{decode_asset_with_data, update_crc64, update_crc32, encode_uvarint, ManifestCryptoData},
-    encoding::{base32_encode, read_uvarint, read_until_null_byte},
-    compression::try_lz4_decompress_detailed,
+    crypto::{decode_asset_with_data, update_crc64, update_crc32, ManifestCryptoData},
+    encoding::{read_uvarint, read_until_null_byte},
     manifest_utils::get_real_name,
 };
 
@@ -249,6 +247,13 @@ impl Catalog {
 
     pub fn filter_db(&mut self) {
         self.entries.retain(|entry| entry.str_type_crc == "tsv");
+    }
+
+    /// 譜面ファイルのみにフィルタリング
+    pub fn filter_chart(&mut self) {
+        self.entries.retain(|entry| {
+            entry.str_label_crc.starts_with("rhythmgame_chart")
+        });
     }
 
     pub fn diff(&mut self, old_catalog: &Catalog) {
