@@ -273,5 +273,267 @@ APIについてです。
 話が少しそれましたがパケットキャプチャをしていきましょう。
 今回はMitmProxyを使います。
 
+### MitmProxyでのパケットキャプチャ
+
 写真を撮りそびれたので文章でとなりますが、初回ログイン時にはほとんど空の内容を`POST`しています。
 
+そしてサーバーのレスポンスヘッダーに`x-res-version`を含めて返してきます。
+
+ユーザーはこれを基準にし、対応するバージョンのマニフェストを取得し、そこからアセットをダウンロードしていると考えられます。
+
+### x-res-versionについて
+
+実際のAPIを見ると、こういう風になってます。
+
+**リクエスト（POST）:**
+```json
+{
+    "device_specific_id": "",
+    "player_id": "",
+    "version": 1
+}
+```
+
+**レスポンスヘッダー:**
+```
+x-res-version: R2402010
+Content-Type: application/json
+...
+```
+
+このx-res-versionがマニフェストのバージョン識別子として使用されます。
+
+コード上では、以下のような流れでx-res-versionを取得しています：
+
+1. **クライアントバージョンの取得** - Google Play Storeから最新のアプリバージョンを自動取得
+2. **ログインAPI呼び出し** - 取得したクライアントバージョンを使ってログインリクエストを送信
+3. **x-res-version抽出** - レスポンスヘッダーからx-res-versionを取得
+4. **マニフェスト取得** - 取得したx-res-versionを使ってマニフェストファイルをダウンロード
+
+例えば、x-res-versionが`R2402010`の場合、マニフェストファイルは以下のURLから取得されます：
+```
+https://assets.link-like-lovelive.app/catalog/R2402010
+```
+
+そして、このマニフェストファイルには、アセットバンドルの一覧とそのハッシュ値、ダウンロードパスなどが含まれており、ゲームが必要なリソースを特定し、適切な順序でダウンロードするための設計図として機能します。
+
+興味深いことに、このx-res-versionはクライアントバージョンとは独立しており、同じクライアントバージョンでも複数のリソースバージョンが存在する可能性があります。これにより、アプリのアップデートなしにゲーム内容の更新が可能になっています。
+
+### アセットダウンロードの流れ
+
+x-res-versionを取得した後のアセットダウンロードの流れは以下のようになります：
+
+1. マニフェストファイルの解析
+2. 必要なアセットバンドルの特定
+3. 並列ダウンロードによるアセット取得
+4. 復号化とファイル変換処理
+
+この仕組みにより、ゲームは効率的にリソース管理を行い、プレイヤーに最新のコンテンツを提供することができています。
+
+### 実装
+
+実際のコード[`playversion.rs`](crates/LinkLike_Core/src/fetch/playversion.rs)でGoogle Play Storeから最新のクライアントバージョンを自動取得しています：
+
+```rust
+pub async fn get_play_version(game_id: &str) -> Result<String, Box<dyn std::error::Error>> {
+    let url = format!("{}{}", VERSION_URL, game_id);
+    // Google Play Storeのページを解析してバージョンを抽出
+    let re = Regex::new(r#"\[\[\["([\d\.]+)"\]\],\[\[\[\d+\]\],\[\[\[\d+,"#).unwrap();
+    // ...
+```
+
+そして[`login.rs`](crates/LinkLike_Core/src/fetch/login.rs)
+
+```rust
+pub async fn login(client_version: &str) -> Result<String, Box<dyn std::error::Error>> {
+    let body = json!({
+        "device_specific_id": "",
+        "player_id": "",
+        "version": 1
+    });
+    
+    // レスポンスヘッダーからx-res-versionを抽出
+    let res_info = res
+        .headers()
+        .get("x-res-version")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("")
+        .to_string();
+}
+```
+
+## アセットの複合
+
+マニフェストの取得した後は、実際のアセットファイルの復号化処理に入ります。
+
+### 暗号化方式の解析
+
+リンクラのアセットファイルは独自の暗号化方式を使用しています。
+
+1. **固定プリフィックス** - 64バイトの固定値
+2. **シード値** - マニフェストから取得
+3. **CRC64** - ファイル名のCRC64ハッシュ
+4. **CRC32** - プラットフォーム識別子（"android"）のCRC32
+5. **可変長整数** - ファイルサイズのuvarint表現
+
+これらを連結してSHA256でハッシュ化し、AES-128-CBCの鍵とIVを生成します
+
+とても複雑ですね
+
+```rust
+pub fn decode_asset_with_data(manifest_data: &ManifestCryptoData, src: &[u8], dst: &mut Vec<u8>) -> Result<(), Box<dyn std::error::Error>> {
+    const PREFIX: &str = "c34ea77df4976cd8907096fa47bb97e61852305892494e3692ba0c7eb434f022c549c96cf7ca0ee1b6ba7f203b6c76e8679699ce9c44af7b1cb000173a515938";
+    
+    // 鍵導出バッファの構築
+    let mut buf = Vec::new();
+    buf.extend_from_slice(&hex::decode(PREFIX)?);
+    buf.extend_from_slice(&manifest_data.seed.to_be_bytes());
+    // ...
+    
+    // SHA256でキーとIVを生成
+    let mut hasher = Sha256::new();
+    hasher.update(&buf);
+    let keyiv = hasher.finalize();
+    
+    let key = &keyiv[..16];
+    let iv = &keyiv[16..];
+}
+```
+
+### LZ4圧縮の処理
+
+複合化後のデータはLZ4で圧縮されている場合がありました。
+
+- 標準的なLZ4フレーム形式
+- サイズプリペンド形式
+- カスタムヘッダー形式
+
+```rust
+pub fn try_lz4_decompress_detailed(data: &[u8], expected_size: u64) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+    // LZ4フレーム形式を試行
+    if let Ok(result) = try_lz4_frame_decompress(data) {
+        return Ok(result);
+    }
+    
+    // カスタム形式を試行
+    if let Ok(result) = try_custom_lz4_decompress(data, expected_size) {
+        return Ok(result);
+    }
+    
+    // サイズプリペンド形式を試行
+    if let Ok(result) = lz4_flex::decompress_size_prepended(data) {
+        return Ok(result);
+    }
+}
+```
+
+## データ形式の解析
+
+### TSVファイルの処理
+
+ゲームのマスターデータは主にTSV（Tab-Separated Values）形式で管理されています。[`parse.rs`](crates/LinkLike_Core/src/master/parse.rs)では、これらをJSONに変換する機能を提供しています：
+
+```rust
+pub fn parse_tsv_from_bytes(data: &[u8]) -> Result<Vec<Map<String, Value>>, Box<dyn std::error::Error>> {
+    let text = String::from_utf8(data.to_vec())?;
+    let lines: Vec<&str> = text.lines().collect();
+    
+    // ヘッダー行の解析
+    let headers: Vec<&str> = lines[0].split('\t').collect();
+    
+    // データ行の変換
+    for line in lines.iter().skip(1) {
+        let values: Vec<&str> = line.split('\t').collect();
+        let json_value = infer_json_value(value_str);
+        // ...
+    }
+}
+```
+
+### 楽曲データの構造
+
+特に苦労したのはこちらの音ゲーの譜面データです。これらは独自のバイナリ形式で保存されており、復号化後にJSONとして解析できます。
+
+譜面ファイルは`rhythmgame_chart`で始まる名前を持ち、以下のような情報を含んでいると推測しました。：
+
+- 楽曲ID
+- 難易度レベル
+- ノーツデータ（タイミング、位置、種類）
+- BPM情報
+- 楽曲メタデータ
+
+## 自動化システム
+
+### 差分更新の仕組み
+
+[`auto_update.rs`](crates/LinkLike_Core/src/fetch/auto_update.rs)では、差分更新システムを実装しています：
+
+```rust
+pub async fn auto_update(&self, options: UpdateOptions) -> Result<UpdateResult, Box<dyn std::error::Error>> {
+    // 現在のバージョンをチェック
+    let current_version = self.read_current_version()?;
+    
+    if !options.force && res_info == current_version {
+        println!("Nothing updated, stopping process.");
+        return Ok(UpdateResult::NoUpdate);
+    }
+    
+    // カタログの差分処理
+    let catalog_processor = CatalogProcessor::new(self);
+    let mut filtered_catalog = if options.force {
+        catalog
+    } else {
+        catalog_processor.process_catalog_diff(catalog).await?
+    };
+}
+```
+
+[`catalog_processor.rs`](crates/LinkLike_Core/src/fetch/catalog_processor.rs)では、前回のカタログと比較して変更されたファイルのみをダウンロード対象とします：
+
+```rust
+pub async fn process_catalog_diff(&self, mut catalog: Catalog) -> Result<Catalog, Box<dyn std::error::Error>> {
+    // 古いカタログを読み込み
+    let old_entries = self.read_from_json_file::<Vec<Entry>>(&self.updater.catalog_json_file_prev)
+        .unwrap_or_else(|_| Vec::new());
+    
+    // 差分を計算
+    catalog.diff(&old_catalog);
+}
+```
+
+### 並列ダウンロード
+
+[`downloader.rs`](crates/LinkLike_Core/src/fetch/downloader.rs)では、セマフォを使用した並列ダウンロードを実装し、効率的なファイル取得を実現しています：
+
+```rust
+pub async fn download_assets_async(catalog: &Catalog, download_dir: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let semaphore = Arc::new(Semaphore::new(MAX_CONCURRENCY));
+    
+    let download_tasks = stream::iter(&catalog.entries)
+        .map(|entry| {
+            let semaphore = Arc::clone(&semaphore);
+            async move {
+                let _permit = semaphore.acquire().await.unwrap();
+                download_one(&client, &entry, &download_dir, &headers, &counter, dl_amount).await
+            }
+        })
+        .buffer_unordered(MAX_CONCURRENCY);
+}
+```
+
+## まとめ
+
+この解析により、リンクラのアセット管理システムの全体像が明らかになりました：
+
+1. **バージョン管理** - Google Playからの自動バージョン取得とx-res-versionによるリソース管理
+2. **暗号化システム** - 複雑な鍵導出とAES-128-CBC暗号化
+3. **圧縮処理** - 複数のLZ4フォーマットへの対応
+4. **データ形式** - TSVベースのマスターデータと独自の譜面フォーマット
+5. **効率化** - 差分更新と並列ダウンロードによる最適化
+
+これらの知見により、ゲームのアセット管理の仕組みを理解し、効率的なデータ取得と解析が可能になりました。
+
+今後の発展として、譜面エディターや創作ツールの開発にこれらの技術を活用できるんじゃないでしょうか。
+
+
+以上です。
