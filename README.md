@@ -95,29 +95,128 @@ make deploy-package
 
 ```
 LinkLikeToolBox/
-├── src/                    # メインアプリケーション
-│   ├── main.rs            # エントリーポイント
-│   └── lib.rs             # ライブラリエクスポート
-├── crates/
-│   ├── LinkLike_Core/     # コア機能
-│   │   ├── src/
-│   │   │   ├── crypt/     # 暗号化・復号化
-│   │   │   ├── fetch/     # ダウンロード機能
-│   │   │   ├── master/    # マスターデータ処理
-│   │   │   └── manifest.rs # マニフェスト処理
-│   │   └── Cargo.toml
-│   └── LinkLike_CLI/      # CLI機能
-│       ├── src/
-│       │   ├── command.rs # コマンド処理
-│       │   ├── banner.rs  # バナー表示
-│       │   └── progress.rs # プログレス表示
-│       └── Cargo.toml
-├── masterdata/            # マスターデータファイル
-├── cache/                 # キャッシュディレクトリ
-├── example/               # サンプルファイル
-├── Dockerfile            # Docker設定
-├── docker-compose.yml    # Docker Compose設定
-└── Makefile              # ビルドスクリプト
+├── crates
+│   ├── LinkLike_CLI
+│   │   ├── src
+│   │   │   ├── banner.rs
+│   │   │   ├── color.rs
+│   │   │   ├── command.rs
+│   │   │   ├── error.rs
+│   │   │   ├── lib.rs
+│   │   │   └── progress.rs
+│   │   ├── Cargo.toml
+│   │   └── README.md
+│   └── LinkLike_Core
+│       ├── src
+│       │   ├── crypt
+│       │   │   ├── asset_bundle.rs
+│       │   │   ├── asset_decoder.rs
+│       │   │   └── chart.rs
+│       │   ├── fetch
+│       │   │   ├── ab.rs
+│       │   │   ├── asset_processor.rs
+│       │   │   ├── auto_update.rs
+│       │   │   ├── catalog_processor.rs
+│       │   │   ├── downloader.rs
+│       │   │   ├── file_converter.rs
+│       │   │   ├── header.rs
+│       │   │   ├── login.rs
+│       │   │   ├── playversion.rs
+│       │   │   └── types.rs
+│       │   ├── master
+│       │   │   ├── compression.rs
+│       │   │   ├── crypto.rs
+│       │   │   ├── encoding.rs
+│       │   │   ├── manifest_utils.rs
+│       │   │   ├── mod.rs
+│       │   │   └── parse.rs
+│       │   ├── lib.rs
+│       │   ├── manifest.rs
+│       │   └── url.rs
+│       ├── Cargo.toml
+│       └── README.md
+├── deploy
+│   ├── config
+│   ├── Dockerfile
+│   ├── README.md
+│   ├── docker-compose.yml
+│   └── linklike-linux
+├── example
+│   ├── rhythmgame_chart_103103_01.bytes.json
+│   ├── rhythmgame_chart_103103_02.bytes.json
+│   ├── rhythmgame_chart_103103_03.bytes.json
+│   └── rhythmgame_chart_103103_04.bytes.json
+├── src
+│   ├── lib.rs
+│   └── main.rs
+├── Cargo.lock
+├── Cargo.toml
+├── Dockerfile
+├── Dockerfile.dev
+├── Makefile
+├── README.md
+├── chart_analyzer.py
+├── conclusion.md
+└── docker-compose.yml
+PS C:\Users\pilim\Documents\dev\LinkLikeToolBox> getF
+C:\Users\pilim\Documents\dev\LinkLikeToolBox
+├── crates
+│   ├── LinkLike_CLI
+│   │   ├── src
+│   │   │   ├── banner.rs
+│   │   │   ├── color.rs
+│   │   │   ├── command.rs
+│   │   │   ├── error.rs
+│   │   │   ├── lib.rs
+│   │   │   └── progress.rs
+│   │   ├── Cargo.toml
+│   │   └── README.md
+│   └── LinkLike_Core
+│       ├── src
+│       │   ├── crypt
+│       │   │   ├── asset_bundle.rs
+│       │   │   ├── asset_decoder.rs
+│       │   │   └── chart.rs
+│       │   ├── fetch
+│       │   │   ├── ab.rs
+│       │   │   ├── asset_processor.rs
+│       │   │   ├── auto_update.rs
+│       │   │   ├── catalog_processor.rs
+│       │   │   ├── downloader.rs
+│       │   │   ├── file_converter.rs
+│       │   │   ├── header.rs
+│       │   │   ├── login.rs
+│       │   │   ├── playversion.rs
+│       │   │   └── types.rs
+│       │   ├── master
+│       │   │   ├── compression.rs
+│       │   │   ├── crypto.rs
+│       │   │   ├── encoding.rs
+│       │   │   ├── manifest_utils.rs
+│       │   │   ├── mod.rs
+│       │   │   └── parse.rs
+│       │   ├── lib.rs
+│       │   ├── manifest.rs
+│       │   └── url.rs
+│       ├── Cargo.toml
+│       └── README.md
+├── example
+│   ├── rhythmgame_chart_103103_01.bytes.json
+│   ├── rhythmgame_chart_103103_02.bytes.json
+│   ├── rhythmgame_chart_103103_03.bytes.json
+│   └── rhythmgame_chart_103103_04.bytes.json
+├── src
+│   ├── lib.rs
+│   └── main.rs
+├── Cargo.lock
+├── Cargo.toml
+├── Dockerfile
+├── Dockerfile.dev
+├── Makefile
+├── README.md
+├── chart_analyzer.py
+├── conclusion.md
+└── docker-compose.ym
 ```
 
 ## 設定とディレクトリ
