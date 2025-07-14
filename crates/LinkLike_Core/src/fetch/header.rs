@@ -16,7 +16,7 @@ pub fn login_headers() -> HashMap<&'static str, &'static str> {
     headers
 }
 
-// asset headers (Goのdownloader.goのassetHeaderと完全に同じ)
+// asset headers
 pub fn asset_headers() -> HashMap<&'static str, &'static str> {
     let mut headers = HashMap::new();
     headers.insert("User-Agent", "UnityPlayer/2021.3.16f1 (UnityWebRequest/1.0, libcurl/7.84.0-DEV)");
