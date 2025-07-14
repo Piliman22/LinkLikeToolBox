@@ -1,235 +1,235 @@
 # LinkLike ToolBox
 
-LinkLive（Link！Like！ラブライブ！蓮ノ空スクールアイドルクラブ）の複合化、暗号化、データ取得が可能のRust製ツールです。
+A comprehensive toolkit for Link! Like! Love Live! Hasu no Sora School Idol Club game data manipulation and extraction.
 
-## 機能
+## Features
 
-### アセットバンドル操作
-- **復号化**: LinkLikeフォーマットのアセットバンドルファイルを復号化
-- **暗号化**: 通常のファイルをLinkLikeフォーマットのアセットバンドルに暗号化
-- **バッチ処理**: フォルダ内の複数ファイルを一括処理
+### Asset Management
+- **Asset Bundle Encryption/Decryption**: Encrypt and decrypt LinkLike format asset bundles
+- **Batch Processing**: Process multiple files and folders at once
+- **Format Support**: Handle various LinkLike asset formats
 
-### チャートデータ操作
-- **展開**: 圧縮されたチャートファイル(.bytes)をJSONに展開
-- **圧縮**: JSONファイルをチャートフォーマット(.bytes)に圧縮
-- **圧縮レベル調整**: 0-9の圧縮レベルを指定可能
+### Chart Data Processing
+- **Chart Decompression**: Extract JSON data from compressed chart files (.bytes)
+- **Chart Compression**: Compress JSON chart data back to .bytes format
+- **Chart Analysis**: Analyze rhythm game chart data with detailed statistics
 
-### ダウンロード機能
-- **自動更新**: ゲームデータの自動取得・更新
-- **マニフェスト取得**: カタログマニフェストファイルのダウンロード
-- **アセット一括取得**: カタログに基づくアセットファイルの一括ダウンロード
-- **マスターデータ取得**: TSVフォーマットのマスターデータベースファイル取得
+### Master Data Extraction
+- **Auto Update**: Automatically download and update game master data
+- **Catalog Processing**: Process and filter game asset catalogs
+- **Database Conversion**: Convert encrypted master data to readable formats
 
-## インストール
+### Manifest Handling
+- **Manifest Download**: Download and process game manifests
+- **Crypto Processing**: Handle encrypted manifest data
+- **Asset Tracking**: Track and manage game assets
 
-### 前提条件
-- Rust 1.70+
-- Cargo
+## Installation
 
-### ビルド方法
+### Prerequisites
+- Rust 1.70+ (for building from source)
+- Docker (for containerized usage)
 
+### Build from Source
 ```bash
-# リポジトリをクローン
 git clone <repository-url>
 cd LinkLikeToolBox
-
-# デバッグビルド
-cargo build
-
-# リリースビルド
 cargo build --release
 ```
 
-### Docker使用
+### Docker Usage
 ```bash
-# Linuxバイナリをビルド
-make build-linux
-
-# デプロイメントパッケージを作成
-make deploy-package
+docker-compose up linklike-toolbox
 ```
 
-## 使用方法
+## Usage
 
-### 基本コマンド
+### CLI Commands
 
+#### Asset Bundle Operations
 ```bash
-# ヘルプを表示
-./linklike-toolbox help
+# Decrypt asset bundle
+./linklike decrypt ab <file_path>
 
-# アセットバンドルを復号化
-./linklike-toolbox decrypt ab <ファイルパス>
-
-# チャートファイルを展開
-./linklike-toolbox decrypt chart <ファイルパス>
-
-# JSONをチャートファイルに圧縮（圧縮レベル6）
-./linklike-toolbox crypt chart <ファイルパス> 6
+# Encrypt asset bundle  
+./linklike crypt ab <file_path>
 ```
 
-### ダウンロードコマンド
-
+#### Chart Data Operations
 ```bash
-# 自動更新（データベースのみ）
-./linklike-toolbox download auto --db-only
+# Decompress chart file (.bytes → .json)
+./linklike decrypt chart <file_path>
 
-# 強制更新（全ファイル）
-./linklike-toolbox download auto --force
-
-# 生ファイルを保持して更新
-./linklike-toolbox download auto --keep-raw
-
-# マニフェストファイルのダウンロード
-./linklike-toolbox download manifest <real_name> <保存ディレクトリ>
-
-# アセットファイルの一括ダウンロード
-./linklike-toolbox download assets <カタログパス> <ダウンロードディレクトリ>
+# Compress chart file (.json → .bytes)
+./linklike crypt chart <file_path> [compression_level]
 ```
 
-### 自動更新オプション
+#### Master Data Operations
+```bash
+# Auto update master data
+./linklike download auto [options]
 
-- `--force`: 強制的に全ファイルを更新
-- `--db-only`: データベース（TSV）ファイルのみを取得
+# Download specific manifest
+./linklike download manifest <real_name> <save_directory>
 
-## プロジェクト構造
+# Download all assets from catalog
+./linklike download assets <catalog_path> <download_directory>
+```
+
+#### Auto Update Options
+```bash
+# Force update even if version is same
+./linklike download auto --force
+
+# Download and convert only database files (.tsv)
+./linklike download auto --db-only
+
+# Download and convert only chart files (.bytes → .json)  
+./linklike download auto --chart-only
+
+# Keep raw downloaded files
+./linklike download auto --keep-raw
+
+# Combined options
+./linklike download auto --chart-only --keep-raw
+./linklike download auto --db-only --force
+```
+
+### Python Chart Analysis
+```bash
+python chart_analyzer.py
+```
+
+## Project Structure
 
 ```
 LinkLikeToolBox/
-├── crates
-│   ├── LinkLike_CLI
-│   │   ├── src
-│   │   │   ├── banner.rs
-│   │   │   ├── color.rs
-│   │   │   ├── command.rs
-│   │   │   ├── error.rs
-│   │   │   ├── lib.rs
-│   │   │   └── progress.rs
-│   │   ├── Cargo.toml
-│   │   └── README.md
-│   └── LinkLike_Core
-│       ├── src
-│       │   ├── crypt
-│       │   │   ├── asset_bundle.rs
-│       │   │   ├── asset_decoder.rs
-│       │   │   └── chart.rs
-│       │   ├── fetch
-│       │   │   ├── ab.rs
-│       │   │   ├── asset_processor.rs
-│       │   │   ├── auto_update.rs
-│       │   │   ├── catalog_processor.rs
-│       │   │   ├── downloader.rs
-│       │   │   ├── file_converter.rs
-│       │   │   ├── header.rs
-│       │   │   ├── login.rs
-│       │   │   ├── playversion.rs
-│       │   │   └── types.rs
-│       │   ├── master
-│       │   │   ├── compression.rs
-│       │   │   ├── crypto.rs
-│       │   │   ├── encoding.rs
-│       │   │   ├── manifest_utils.rs
-│       │   │   ├── mod.rs
-│       │   │   └── parse.rs
-│       │   ├── lib.rs
-│       │   ├── manifest.rs
-│       │   └── url.rs
-│       ├── Cargo.toml
-│       └── README.md
-├── example
-│   ├── rhythmgame_chart_103103_01.bytes.json
-│   ├── rhythmgame_chart_103103_02.bytes.json
-│   ├── rhythmgame_chart_103103_03.bytes.json
-│   └── rhythmgame_chart_103103_04.bytes.json
-├── src
-│   ├── lib.rs
-│   └── main.rs
-├── Cargo.lock
-├── Cargo.toml
+├── crates/
+│   ├── LinkLike_Core/     # Core functionality
+│   │   ├── src/
+│   │   │   ├── crypt/     # Encryption/decryption modules
+│   │   │   ├── fetch/     # Data fetching and processing
+│   │   │   ├── master/    # Master data handling
+│   │   │   └── manifest.rs # Manifest processing
+│   │   └── Cargo.toml
+│   └── LinkLike_CLI/      # Command-line interface
+│       ├── src/
+│       └── Cargo.toml
+├── example/               # Sample chart files
+├── chart_analyzer.py      # Chart analysis tool
+├── docker-compose.yml
 ├── Dockerfile
-├── Dockerfile.dev
-├── Makefile
-├── README.md
-├── chart_analyzer.py
-├── conclusion.md
-└── docker-compose.yml
+└── Makefile
 ```
 
-## 設定とディレクトリ
+## Core Components
 
-### デフォルトディレクトリ
-- `cache/`: キャッシュとマニフェストファイル
-- `cache/assets/`: ダウンロードしたアセットファイル
-- `cache/plain/`: 復号化されたファイル
-- `masterdata/`: マスターデータ（TSV）ファイル
+### LinkLike_Core
+- [`AssetBundle`](crates/LinkLike_Core/src/crypt/asset_bundle.rs): Handle LinkLike asset bundle format
+- [`Chart`](crates/LinkLike_Core/src/crypt/chart.rs): Process rhythm game chart data
+- [`AssetDecoder`](crates/LinkLike_Core/src/crypt/asset_decoder.rs): Decrypt game assets
+- [`AutoUpdater`](crates/LinkLike_Core/src/fetch/auto_update.rs): Automatic data updates
+- [`Catalog`](crates/LinkLike_Core/src/manifest.rs): Game asset catalog management
 
-### 設定ファイル
-- `cache/currentVersion.txt`: 現在のリソースバージョン
-- `cache/catalog.json`: アセットカタログ
-- `cache/catalog_diff.json`: カタログ差分
-- `cache/updated`: 更新フラグファイル
+### LinkLike_CLI
+- Command-line interface for all operations
+- Progress indicators and colored output
+- Batch processing capabilities
 
-## 技術仕様
+## Configuration
 
-### 暗号化仕様
-- **アセットバンドル**: カスタムヘッダー（0xAB 0x00）付きの独自フォーマット
-- **マニフェスト**: AES-128-CBC + LZ4圧縮
-- **チャートデータ**: Raw Deflate圧縮
+### Update Options
+- `--force`: Force update all assets
+- `--db-only`: Update only database files
+- `--chart-only`: Update only chart files
+- `--keep-raw`: Preserve raw downloaded files
 
-### サポートフォーマット
-- `.bytes`: 圧縮チャートファイル
-- `.tsv`: マスターデータファイル
-- `.json`: 展開されたチャートデータ
-- アセットバンドル: 独自暗号化フォーマット
+### Compression Levels
+Chart compression supports levels 0-9:
+- 0: No compression (fastest)
+- 6: Default compression (balanced)
+- 9: Maximum compression (smallest size)
 
-### 依存関係
-- `reqwest`: HTTP通信
-- `serde`: シリアライゼーション
-- `tokio`: 非同期処理
-- `aes`: AES暗号化
-- `lz4_flex`: LZ4圧縮
-- `flate2`: Deflate圧縮
+## Development
 
-## 開発
-
-### 開発環境セットアップ
+### Building
 ```bash
-# 依存関係をインストール
-cargo fetch
+# Debug build
+cargo build
 
-# テストを実行
+# Release build
+cargo build --release
+
+# Build for specific platform
+make build-linux
+make build-windows
+```
+
+### Testing
+```bash
 cargo test
-
-# フォーマット
-cargo fmt
-
-# Lintチェック
-cargo clippy
 ```
 
-### Docker開発環境
+### Docker Development
 ```bash
-# 開発用コンテナを起動
+# Development container
 docker-compose -f docker-compose.yml up dev
 
-# Linuxビルド用コンテナ
-docker build --target builder -t linklike-builder .
+# Production build
+make docker-build
 ```
 
-## ライセンス
+## Chart Analysis
 
-本プロジェクトは教育・研究目的で開発されています。
-ゲームデータの取り扱いについては、各自の責任で適切に行ってください。
+The included Python script provides detailed analysis of rhythm game charts:
+- Note timing and type analysis
+- BPM and beat information
+- Statistical summaries
+- CSV export functionality
 
-## 貢献
+### Chart Analysis Features
+- **Note Classification**: Categorize different note types
+- **Timing Analysis**: Analyze note timing patterns
+- **Flag Decoding**: Decode note flag information
+- **Export Options**: Export analysis to CSV format
 
-バグ報告や機能提案は Issue にて受け付けています。
-プルリクエストも歓迎いたします。
+## File Formats
 
-## 作者
+### Supported Formats
+- `.assetbundle`: LinkLike asset bundles
+- `.bytes`: Compressed chart data
+- `.json`: Decompressed chart data
+- `.tsv`: Master database files
 
-Created by pim4n
+### Chart Data Structure
+```json
+{
+  "Bpms": [...],
+  "Offset": 0.0,
+  "Beats": [...],
+  "Notes": [
+    {
+      "just": 1000.0,
+      "Flags": 123456,
+      "Uid": 1,
+      "holds": [...]
+    }
+  ]
+}
+```
 
----
+## Contributing
 
-**注意**: このツールは非公式のファンメイドツールです。
-公式のゲーム運営とは一切関係ありません。
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+This project is intended for educational and research purposes. Please respect the original game's terms of service.
+
+## Disclaimer
+
+This tool is for educational purposes only. Users are responsible for complying with the game's terms of service and applicable laws.
