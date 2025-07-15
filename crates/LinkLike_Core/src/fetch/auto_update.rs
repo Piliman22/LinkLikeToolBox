@@ -128,6 +128,7 @@ impl AutoUpdater {
 
         if options.db_only {
             file_converter.convert_db_files(&filtered_catalog).await?;
+            self.convert_tsv_to_json(&filtered_catalog).await?;
             println!("TSV files converted to: {}", self.db_save_dir);
         }
 
@@ -176,5 +177,62 @@ impl AutoUpdater {
             Ok(version) => Ok(version),
             Err(_) => Ok(String::new()),
         }
+    }
+
+    async fn convert_tsv_to_json(&self, catalog: &Catalog) -> Result<(), Box<dyn std::error::Error>> {
+        use crate::master::parse::{parse_tsv_from_bytes, convert_tsv_to_yaml_file};
+        use std::path::Path;
+
+        println!("Converting TSV files to YAML...");
+        
+        let mut converted_count = 0;
+        let mut error_count = 0;
+        
+        for entry in &catalog.entries {
+            if entry.str_type_crc != "tsv" {
+                continue;
+            }
+
+            let tsv_path = format!("{}/{}", self.db_save_dir, entry.str_label_crc);
+            let yaml_path = format!("{}/{}.yaml", self.db_save_dir, entry.str_label_crc);
+            
+            if !Path::new(&tsv_path).exists() {
+                eprintln!("TSV file not found: {}", tsv_path);
+                error_count += 1;
+                continue;
+            }
+
+            match convert_tsv_to_yaml_file(&tsv_path, &yaml_path, &entry.str_label_crc) {
+                Ok(_) => {
+                    converted_count += 1;
+                    println!("Converted: {} -> {}", tsv_path, yaml_path);
+                }
+                Err(e) => {
+                    eprintln!("Failed to convert {}: {}", tsv_path, e);
+                    error_count += 1;
+                }
+            }
+        }
+
+        println!("TSV to YAML conversion completed: {} converted, {} errors", converted_count, error_count);
+        Ok(())
+    }
+
+    async fn convert_single_tsv_to_json(&self, tsv_path: &str, json_path: &str, label: &str) -> Result<(), Box<dyn std::error::Error>> {
+        use crate::master::parse::{parse_tsv_from_bytes, get_json_type_name};
+        
+        let tsv_data = fs::read(tsv_path)?;
+        let records = parse_tsv_from_bytes(&tsv_data)?;
+        
+        let type_name = get_json_type_name(label);
+        let json_output = serde_json::json!({
+            "type": type_name,
+            "data": records
+        });
+        
+        let json_string = serde_json::to_string_pretty(&json_output)?;
+        fs::write(json_path, json_string)?;
+        
+        Ok(())
     }
 }

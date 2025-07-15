@@ -27,7 +27,7 @@ impl<'a> FileConverter<'a> {
             println!("Processing TSV file: {}", entry.str_label_crc);
             
             let src_path = format!("{}/{}", self.updater.decrypted_assets_save_dir, entry.str_label_crc);
-            let dest_path = format!("{}/{}.tsv", self.updater.db_save_dir, entry.str_label_crc);
+            let dest_path = format!("{}/{}", self.updater.db_save_dir, entry.str_label_crc);
             
             if !Path::new(&src_path).exists() {
                 eprintln!("Decrypted file not found: {}", src_path);
