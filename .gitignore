@@ -6,3 +6,6 @@ build.ps1
 linklike-toolbox-linux.tar.gz
 linklike-linux
 deploy
+__pycache__
+charts
+output_usc
